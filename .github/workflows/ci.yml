@@ -21,3 +21,14 @@ jobs:
       - run: python -m dataforge examples/manifest.jsonl --root examples/data
       - run: python -m dataforge.diff examples/manifest.jsonl examples/manifest.jsonl --before-root examples/data --after-root examples/data
       - run: python -m compileall -q dataforge
+
+  image-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python -m pip install -r requirements-images.txt
+      - run: python -c "import PIL; assert PIL.__version__ == '13.0.0'"
+      - run: python -m unittest discover -s tests -p test_images.py -v

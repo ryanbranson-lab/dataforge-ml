@@ -69,3 +69,11 @@ For an opt-in comparison of actual bytes in two frozen versions, supply both
 `--before-root` and `--after-root` to `dataforge.diff`. A hash mismatch or missing
 content aborts without a report; verified byte equality remains distinct from
 reported quality findings. See the [verified-mode contract](docs/manifest-diff.md).
+
+## Optional image integrity
+
+Install `requirements-images.txt` and add `--check-images` to the validation CLI
+to verify/decode declared PNG/JPEG records under explicit pixel bounds. Default
+validation and metadata comparison remain dependency-free and byte-oriented.
+This checks structural integrity, not semantic quality or safety. See
+[image-integrity contracts and limits](docs/image-integrity.md).
