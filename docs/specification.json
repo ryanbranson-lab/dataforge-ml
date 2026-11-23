@@ -1,0 +1,61 @@
+{
+  "name": "DataForge ML",
+  "owner": "ryanbranson-lab",
+  "proposed_repository": "ryanbranson-lab/dataforge-ml",
+  "mission": "Versioned multimodal dataset manifests and inspectable dataset-quality evidence.",
+  "status": "Initial implementation proposed on feature/manifest-provenance; independent review pending.",
+  "architecture": [
+    "Streaming manifest ingestion",
+    "Versioned canonical record contract",
+    "Content-hash/media-metadata validation",
+    "Quality findings and split leakage index",
+    "CLI first; Arrow/object storage/distributed workers only after measured need"
+  ],
+  "functional_requirements": [
+    "Record source URI, split, media type, content digest and license metadata",
+    "Validate local text/image records with bounded reads",
+    "Detect exact duplicates and cross-split leakage",
+    "Produce immutable manifests and machine-readable findings",
+    "Preserve original files; never silently repair data"
+  ],
+  "phases": [
+    "JSONL manifest validator",
+    "Local image integrity and provenance",
+    "Dataset version diff and deduplication",
+    "Measured partitioned processing",
+    "Audio/video after licensing and resource review"
+  ],
+  "backlog": [
+    {
+      "id": "DF-01",
+      "title": "Validate multimodal manifests and provenance",
+      "problem": "Training inputs need traceable validated metadata before quality comparisons.",
+      "implementation": "Typed versioned JSONL contract, bounded local-path resolution, digest verification and deterministic report; no ingestion from remote URLs.",
+      "acceptance": [
+        "Reject path escape, missing license metadata, duplicate IDs and malformed records",
+        "Detect byte drift and exact cross-split duplicates",
+        "Reports omit raw sensitive payloads"
+      ],
+      "tests": [
+        "Synthetic text/image fixtures",
+        "Symlink/path traversal and missing files",
+        "Split leakage, invalid UTF-8 and deterministic digests"
+      ],
+      "dependencies": [
+        "Approve repository creation",
+        "Review local filesystem threat boundary"
+      ]
+    }
+  ],
+  "testing_strategy": [
+    "Synthetic fixtures with explicit provenance",
+    "Malformed and adversarial manifests",
+    "Memory/throughput measurements before large-scale claims"
+  ],
+  "release_criteria": [
+    "Document actual modalities supported",
+    "Reproducible manifest and drift demo",
+    "Real review and CPU CI",
+    "No distributed-scale claim without measurements"
+  ]
+}
