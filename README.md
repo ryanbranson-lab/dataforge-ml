@@ -1,6 +1,6 @@
 # DataForge ML
 
-CPU-first multimodal dataset metadata and byte-provenance validation, owned by
+CPU-first multimodal dataset metadata, version comparison and byte-provenance validation, owned by
 `ryanbranson-lab`. This early slice validates local manifests, detects byte drift
 and finds exact duplicates/overlap between dataset splits. It provides a testable
 foundation for later dataset processing, not a large-scale data platform.
@@ -57,3 +57,10 @@ only when licensing, resources and measured need justify them. MIT licensed.
 Prepared by Codex with the repository owner's authorization. This is independent
 new code; existing projects under other accounts were not relabeled as this
 account's contributions. Genuine independent review is still required.
+
+## Compare dataset declarations
+
+Run `python -m dataforge.diff examples/manifest.jsonl examples/manifest-next.jsonl`.
+The supplied example reports a declared split change and exits 1. Exit 0 means no
+declared drift; exit 2 means invalid inputs. Content files are not opened or
+verified by comparison. See [manifest comparison](docs/manifest-diff.md).

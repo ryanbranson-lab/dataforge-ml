@@ -9,3 +9,6 @@ No sensitive record payload is included in reports. Digests may reveal membershi
 in known datasets; review reports before sharing. No private vulnerability-report
 channel is configured; do not put secrets or sensitive datasets in public issues.
 Image MIME and license declarations are not security or legal verification.
+
+Comparison reports contain record IDs, which may be sensitive. They deliberately
+omit changed values and never attest that current content matches declared hashes.
