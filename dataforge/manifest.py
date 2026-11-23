@@ -38,7 +38,7 @@ def _text(value: Any) -> bool:
     return True
 
 
-def _local_file(root: Path, value: str) -> Path:
+def _relative_path(value: str) -> PurePosixPath:
     relative = PurePosixPath(value)
     if (
         relative.is_absolute()
@@ -47,6 +47,11 @@ def _local_file(root: Path, value: str) -> Path:
         or any(part in {"", ".", ".."} for part in value.split("/"))
     ):
         raise ValueError("path must be a canonical relative POSIX file path")
+    return relative
+
+
+def _local_file(root: Path, value: str) -> Path:
+    relative = _relative_path(value)
     path = root
     for part in relative.parts:
         path = path / part
@@ -58,15 +63,8 @@ def _local_file(root: Path, value: str) -> Path:
     return resolved
 
 
-def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
-    """Return findings, never rewrite source files; schema or I/O errors abort.
-
-    Files and root must be trusted, immutable local inputs during validation.
-    Path checks are not race-resistant isolation against another local process.
-    """
-    base = Path(root).resolve(strict=True)
-    if not base.is_dir():
-        raise ValueError("root must be a directory")
+def read_manifest(manifest: str | Path) -> tuple[list[tuple[int, dict[str, Any]]], str]:
+    """Validate metadata without opening declared content files or verifying bytes."""
     with open(manifest, "rb") as stream:
         raw = stream.read(MAX_MANIFEST + 1)
     if len(raw) > MAX_MANIFEST:
@@ -78,7 +76,6 @@ def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
         raise ValueError("manifest requires 1 to 10000 records")
     rows = []
     ids: set[str] = set()
-    # Validate all metadata and paths before reading any dataset content.
     for number, line in enumerate(lines, 1):
         try:
             row = json.loads(line, object_pairs_hook=_object, parse_constant=_constant)
@@ -97,7 +94,22 @@ def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
             raise ValueError("unsupported declared media type")
         if not re.fullmatch(r"[0-9a-f]{64}", row["sha256"]):
             raise ValueError("sha256 must be lowercase hexadecimal")
-        rows.append((number, row, _local_file(base, row["path"])))
+        _relative_path(row["path"])
+        rows.append((number, row))
+    return rows, hashlib.sha256(raw).hexdigest()
+
+
+def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
+    """Return findings, never rewrite source files; schema or I/O errors abort.
+
+    Files and root must be trusted, immutable local inputs during validation.
+    Path checks are not race-resistant isolation against another local process.
+    """
+    base = Path(root).resolve(strict=True)
+    if not base.is_dir():
+        raise ValueError("root must be a directory")
+    metadata, manifest_hash = read_manifest(manifest)
+    rows = [(number, row, _local_file(base, row["path"])) for number, row in metadata]
     findings = []
     seen: dict[str, tuple[int, str]] = {}
     split_seen: dict[tuple[str, str], int] = {}
@@ -137,7 +149,7 @@ def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
             seen.setdefault(observed, (number, row["split"]))
     return {
         "schema_version": 1,
-        "manifest_sha256": hashlib.sha256(raw).hexdigest(),
+        "manifest_sha256": manifest_hash,
         "records": len(rows),
         "ok": not findings,
         "findings": findings,
