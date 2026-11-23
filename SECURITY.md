@@ -18,3 +18,9 @@ under both explicitly supplied roots. It does not provide filesystem isolation o
 an atomic snapshot across files. Both roots are required; metadata-only comparison
 never silently starts accessing content. A verification failure emits no partial
 report or success assertion.
+
+Image integrity is explicitly opt-in and uses native Pillow codecs on the same
+bounded byte snapshot as SHA-256. Pixel limits precede full decode, but do not
+provide isolation, complete RSS/CPU quotas or protection against codec defects.
+Only trusted frozen local input is supported. The decoder must not be configured
+to tolerate truncated images. See docs/image-integrity.md for bounds and limits.

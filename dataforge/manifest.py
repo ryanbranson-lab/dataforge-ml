@@ -99,20 +99,43 @@ def read_manifest(manifest: str | Path) -> tuple[list[tuple[int, dict[str, Any]]
     return rows, hashlib.sha256(raw).hexdigest()
 
 
-def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
+def validate(
+    manifest: str | Path,
+    root: str | Path,
+    *,
+    check_images: bool = False,
+    max_pixels: int = 16_000_000,
+) -> dict[str, Any]:
     """Return findings, never rewrite source files; schema or I/O errors abort.
 
     Files and root must be trusted, immutable local inputs during validation.
     Path checks are not race-resistant isolation against another local process.
     """
     metadata, manifest_hash = read_manifest(manifest)
-    return _validate_content(metadata, manifest_hash, root)
+    return _validate_content(
+        metadata, manifest_hash, root, check_images=check_images, max_pixels=max_pixels
+    )
 
 
 def _validate_content(
-    metadata: list[tuple[int, dict[str, Any]]], manifest_hash: str, root: str | Path
+    metadata: list[tuple[int, dict[str, Any]]],
+    manifest_hash: str,
+    root: str | Path,
+    *,
+    check_images: bool = False,
+    max_pixels: int = 16_000_000,
 ) -> dict[str, Any]:
     """Validate content against an already parsed manifest snapshot (internal)."""
+    if type(check_images) is not bool:
+        raise ValueError("check_images must be boolean")
+    if check_images:
+        from .images import require_decoder, validate_pixel_limit
+
+        require_decoder()
+        validate_pixel_limit(max_pixels)
+    elif max_pixels != 16_000_000:
+        raise ValueError("max_pixels requires check_images=True")
+    images_checked = 0
     base = Path(root).resolve(strict=True)
     if not base.is_dir():
         raise ValueError("root must be a directory")
@@ -121,6 +144,11 @@ def _validate_content(
     seen: dict[str, tuple[int, str]] = {}
     split_seen: dict[tuple[str, str], int] = {}
     for number, row, path in rows:
+        image_bytes = (
+            bytearray()
+            if check_images and row["media_type"].startswith("image/")
+            else None
+        )
         digest = hashlib.sha256()
         total = 0
         with path.open("rb") as stream:
@@ -129,10 +157,21 @@ def _validate_content(
                 if total > MAX_FILE:
                     raise ValueError("dataset file exceeds 64 MiB")
                 digest.update(block)
+                if image_bytes is not None:
+                    image_bytes.extend(block)
         observed = digest.hexdigest()
         if observed != row["sha256"]:
             findings.append({"line": number, "code": "hash_mismatch"})
             continue
+        if image_bytes is not None:
+            from .images import check_image
+
+            images_checked += 1
+            image_finding = check_image(
+                bytes(image_bytes), row["media_type"], max_pixels
+            )
+            if image_finding is not None:
+                findings.append({"line": number, "code": image_finding})
         key = (observed, row["split"])
         if key in split_seen:
             findings.append(
@@ -154,10 +193,18 @@ def _validate_content(
             )
         else:
             seen.setdefault(observed, (number, row["split"]))
-    return {
+    report: dict[str, Any] = {
         "schema_version": 1,
         "manifest_sha256": manifest_hash,
         "records": len(rows),
         "ok": not findings,
         "findings": findings,
     }
+
+    if check_images:
+        report["image_validation"] = {
+            "enabled": True,
+            "checked": images_checked,
+            "max_pixels": max_pixels,
+        }
+    return report
