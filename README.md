@@ -64,3 +64,8 @@ Run `python -m dataforge.diff examples/manifest.jsonl examples/manifest-next.jso
 The supplied example reports a declared split change and exits 1. Exit 0 means no
 declared drift; exit 2 means invalid inputs. Content files are not opened or
 verified by comparison. See [manifest comparison](docs/manifest-diff.md).
+
+For an opt-in comparison of actual bytes in two frozen versions, supply both
+`--before-root` and `--after-root` to `dataforge.diff`. A hash mismatch or missing
+content aborts without a report; verified byte equality remains distinct from
+reported quality findings. See the [verified-mode contract](docs/manifest-diff.md).

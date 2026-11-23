@@ -12,3 +12,9 @@ Image MIME and license declarations are not security or legal verification.
 
 Comparison reports contain record IDs, which may be sensitive. They deliberately
 omit changed values and never attest that current content matches declared hashes.
+
+Verified comparison parses each manifest once and checks the corresponding bytes
+under both explicitly supplied roots. It does not provide filesystem isolation or
+an atomic snapshot across files. Both roots are required; metadata-only comparison
+never silently starts accessing content. A verification failure emits no partial
+report or success assertion.

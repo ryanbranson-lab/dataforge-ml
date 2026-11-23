@@ -27,3 +27,36 @@ is always false. Run `python -m dataforge ... --root ...` separately against fro
 content for byte validation. Neither operation rewrites inputs or claims an atomic
 snapshot of concurrently changing data. The example changes the declared split
 of an original synthetic record; it is not an actual train/evaluation experiment.
+
+## Opt-in verification of both frozen dataset roots
+
+```sh
+python -m dataforge.diff before.jsonl after.jsonl --before-root frozen-before --after-root frozen-after
+```
+
+Both root flags must be supplied together. Without them the original metadata-only
+API, report and exit codes are unchanged. With them, both manifests are parsed
+once and each parsed snapshot is passed to the existing bounded byte validator.
+This binds comparison and verification to the same manifest-byte hashes even if a
+manifest path is subsequently replaced. Freeze all manifests/content for meaningful
+results: the operation does not establish a multi-file atomic filesystem snapshot.
+
+Missing files, symlinks, unsafe paths, invalid metadata, oversized content and any
+file SHA-256 mismatch abort with exit 2 and no partial stdout report. A mismatch
+is an observed failure to satisfy a declaration, distinct from a legitimate
+declared change between the two frozen versions. On successful byte checks,
+`content_files_verified` is true and `verification.before` / `verification.after`
+contain the existing validation reports. This means all declared bytes matched;
+it does not prove image correctness, legal licensing rights or semantic equality.
+
+Byte verification does not hide quality findings. Duplicate/split-overlap findings
+remain in each validation report, and `verification.quality_ok` is false if either
+version has findings. Verified mode exits 0 only when there is no declared drift
+and both quality reports are clean; it exits 1 for declared drift or quality
+findings when byte checks otherwise succeeded. A failure never prints a report
+claiming `content_files_verified=true`.
+
+Library callers use `compare(before, after, before_root=..., after_root=...)`.
+Roots and content are trusted local inputs, with the same limits and filesystem-race
+limitations as the standalone validator. Reports continue to omit content paths,
+payloads and changed metadata values; record IDs may still be sensitive.

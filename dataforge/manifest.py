@@ -105,10 +105,17 @@ def validate(manifest: str | Path, root: str | Path) -> dict[str, Any]:
     Files and root must be trusted, immutable local inputs during validation.
     Path checks are not race-resistant isolation against another local process.
     """
+    metadata, manifest_hash = read_manifest(manifest)
+    return _validate_content(metadata, manifest_hash, root)
+
+
+def _validate_content(
+    metadata: list[tuple[int, dict[str, Any]]], manifest_hash: str, root: str | Path
+) -> dict[str, Any]:
+    """Validate content against an already parsed manifest snapshot (internal)."""
     base = Path(root).resolve(strict=True)
     if not base.is_dir():
         raise ValueError("root must be a directory")
-    metadata, manifest_hash = read_manifest(manifest)
     rows = [(number, row, _local_file(base, row["path"])) for number, row in metadata]
     findings = []
     seen: dict[str, tuple[int, str]] = {}
