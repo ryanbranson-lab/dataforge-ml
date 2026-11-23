@@ -19,4 +19,5 @@ jobs:
       - run: mypy
       - run: python -m unittest discover -s tests -v
       - run: python -m dataforge examples/manifest.jsonl --root examples/data
+      - run: python -m dataforge.diff examples/manifest.jsonl examples/manifest.jsonl --before-root examples/data --after-root examples/data
       - run: python -m compileall -q dataforge
