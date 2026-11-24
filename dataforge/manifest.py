@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import stat
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -65,8 +67,14 @@ def _local_file(root: Path, value: str) -> Path:
 
 def read_manifest(manifest: str | Path) -> tuple[list[tuple[int, dict[str, Any]]], str]:
     """Validate metadata without opening declared content files or verifying bytes."""
-    with open(manifest, "rb") as stream:
-        raw = stream.read(MAX_MANIFEST + 1)
+    descriptor = os.open(manifest, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+    try:
+        if not stat.S_ISREG(os.fstat(descriptor).st_mode):
+            raise ValueError("manifest input must be a regular file")
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            raw = stream.read(MAX_MANIFEST + 1)
+    finally:
+        os.close(descriptor)
     if len(raw) > MAX_MANIFEST:
         raise ValueError("manifest exceeds 8 MiB")
     lines = raw.decode("utf-8").split("\n")

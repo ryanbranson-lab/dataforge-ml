@@ -55,7 +55,7 @@ class AuditTests(unittest.TestCase):
     def test_order_independent_examples_and_no_payload_opens(self):
         a = self.write("a", [record("z"), record("a")])
         b = self.write("b", [record("x")])
-        original_open = open
+        original_open = os.open
         seen = []
 
         def checked(path, *args, **kwargs):
@@ -63,7 +63,7 @@ class AuditTests(unittest.TestCase):
             seen.append(Path(path))
             return original_open(path, *args, **kwargs)
 
-        with patch("builtins.open", side_effect=checked):
+        with patch("dataforge.manifest.os.open", side_effect=checked):
             first = audit_manifests({"z": a, "a": b})
         second = audit_manifests({"a": b, "z": a})
         self.assertEqual(first, second)
