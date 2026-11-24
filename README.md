@@ -94,3 +94,7 @@ keeps matching declared SHA-256 groups together, preserves IDs/paths/licenses, a
 reports actual per-split counts. Assignment is reproducible and row-order independent;
 sizes are not exact quotas and small splits may be empty. Grouping is metadata-only,
 not proof of byte equality or leakage freedom. See [partitioning](docs/partitioning.md).
+
+Audit cross-manifest digest declarations and ID conflicts with
+`python -m dataforge.audit --source train=train.jsonl --source eval=eval.jsonl`.
+See [partition audit](docs/partition-audit.md) for bounded reports and metadata-only limits.
