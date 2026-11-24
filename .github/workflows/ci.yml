@@ -27,10 +27,15 @@ jobs:
           from pathlib import Path
           from dataforge.build import build_manifest
           from dataforge.manifest import validate
+          from dataforge.partition import partition_manifest
           with tempfile.TemporaryDirectory() as scratch:
               output = Path(scratch) / "manifest.jsonl"
               build_manifest("examples/data", split="train", license_declaration="MIT", output=output)
               assert validate(output, "examples/data")["ok"]
+              partitioned = Path(scratch) / "partitioned.jsonl"
+              report = partition_manifest(output, output=partitioned, seed=42, fractions={"train": 0.8, "eval": 0.2})
+              assert report["records"] == 1 and sum(report["counts"].values()) == 1
+              assert validate(partitioned, "examples/data")["ok"]
           PYCODE
       - run: python -m compileall -q dataforge
 

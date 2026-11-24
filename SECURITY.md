@@ -30,3 +30,9 @@ requires output outside the dataset root. It scans trusted frozen files without
 filesystem-race isolation. Complete output is published exclusively; prior files
 are never replaced, and input bytes are never rewritten. License declarations
 are caller-supplied metadata, not inferred rights. See docs/manifest-build.md.
+
+Partitioning only rewrites validated split declarations into a new exclusive output;
+it does not open content files or verify declared digests. Matching digest metadata
+is not proof of actual byte equality or absence of semantic leakage. Input/output
+aliases and overwrites are rejected; atomic publication has the builder's same
+trusted-filesystem and durability limits. See docs/partitioning.md.
