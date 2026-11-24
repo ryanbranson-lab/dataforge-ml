@@ -19,3 +19,6 @@ image checks and exclusive atomic-complete publication outside the input tree.
 Unreleased: deterministic seeded split assignment by declared SHA-256 group, with
 explicit fractions, full record preservation, actual counts, metadata-only status
 and bounded atomic no-clobber output. No exact split-size or leakage guarantee.
+
+Unreleased: bounded single-manifest split-declaration audit with stable examples,
+complete declared-group counts, explicit metadata-only status and findings exit1.
