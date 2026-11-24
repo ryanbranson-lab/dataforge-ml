@@ -98,3 +98,8 @@ not proof of byte equality or leakage freedom. See [partitioning](docs/partition
 Audit cross-manifest digest declarations and ID conflicts with
 `python -m dataforge.audit --source train=train.jsonl --source eval=eval.jsonl`.
 See [partition audit](docs/partition-audit.md) for bounded reports and metadata-only limits.
+
+For a single combined manifest, use
+`python -m dataforge.split_audit combined.jsonl --max-examples 20` to identify
+declared digest groups crossing its split fields. Exit1 reports findings; payload
+files are not opened. See [split declaration audit](docs/split-declaration-audit.md).
