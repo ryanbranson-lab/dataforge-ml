@@ -15,3 +15,7 @@ image CI. Default byte validation and comparison behavior remain unchanged.
 Unreleased: bounded deterministic local manifest construction, explicit license/
 split declarations, stable relative-path IDs, actual hashes/byte totals, opt-in
 image checks and exclusive atomic-complete publication outside the input tree.
+
+Unreleased: deterministic seeded split assignment by declared SHA-256 group, with
+explicit fractions, full record preservation, actual counts, metadata-only status
+and bounded atomic no-clobber output. No exact split-size or leakage guarantee.

@@ -86,3 +86,11 @@ Stable path IDs, hashes and byte totals come from bounded local traversal/reads;
 unsupported files or errors fail rather than being silently dropped. Existing
 output is never overwritten. Image decoding remains opt-in with `--check-images`.
 See [manifest generation](docs/manifest-build.md) for exact bounds and semantics.
+
+## Assign dataset splits by declared duplicate groups
+
+`python -m dataforge.partition input.jsonl --output partitioned.jsonl --seed 42 --split train=0.8 --split eval=0.2`
+keeps matching declared SHA-256 groups together, preserves IDs/paths/licenses, and
+reports actual per-split counts. Assignment is reproducible and row-order independent;
+sizes are not exact quotas and small splits may be empty. Grouping is metadata-only,
+not proof of byte equality or leakage freedom. See [partitioning](docs/partitioning.md).
