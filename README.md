@@ -77,3 +77,12 @@ to verify/decode declared PNG/JPEG records under explicit pixel bounds. Default
 validation and metadata comparison remain dependency-free and byte-oriented.
 This checks structural integrity, not semantic quality or safety. See
 [image-integrity contracts and limits](docs/image-integrity.md).
+
+## Build a manifest from a frozen local dataset
+
+Run `python -m dataforge.build frozen-data --split train --license MIT --output manifests/train.jsonl`.
+Supply the license declaration yourself and put output outside the data root.
+Stable path IDs, hashes and byte totals come from bounded local traversal/reads;
+unsupported files or errors fail rather than being silently dropped. Existing
+output is never overwritten. Image decoding remains opt-in with `--check-images`.
+See [manifest generation](docs/manifest-build.md) for exact bounds and semantics.
