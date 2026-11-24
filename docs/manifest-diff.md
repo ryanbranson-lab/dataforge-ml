@@ -60,3 +60,10 @@ Library callers use `compare(before, after, before_root=..., after_root=...)`.
 Roots and content are trusted local inputs, with the same limits and filesystem-race
 limitations as the standalone validator. Reports continue to omit content paths,
 payloads and changed metadata values; record IDs may still be sensitive.
+
+The common metadata reader opens manifests nonblocking, checks the opened
+file descriptor is a regular file, then performs its bounded read. FIFOs and
+other special files fail rather than waiting for a writer; direct manifest
+symlinks are rejected. Parent directories and inputs must remain trusted and
+frozen. This does not add hostile-filesystem race isolation or filesystem-root
+confinement, and regular-file reads can still be subject to host I/O delays.
