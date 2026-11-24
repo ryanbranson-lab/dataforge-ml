@@ -11,3 +11,7 @@ behavior remains unchanged.
 Unreleased: optional bounded PNG/JPEG structural integrity checks, type and
 animation validation, real decoding, pixel/decompression protection and mandatory
 image CI. Default byte validation and comparison behavior remain unchanged.
+
+Unreleased: bounded deterministic local manifest construction, explicit license/
+split declarations, stable relative-path IDs, actual hashes/byte totals, opt-in
+image checks and exclusive atomic-complete publication outside the input tree.
