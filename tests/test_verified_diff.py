@@ -141,11 +141,11 @@ class VerifiedDiffTests(unittest.TestCase):
 
         original_after_hash = hashlib.sha256(self.after.read_bytes()).hexdigest()
 
-        def verify_snapshot(rows, digest, root):
+        def verify_snapshot(rows, digest, root, **kwargs):
             # Change the path's metadata after both inputs were parsed. The
             # evaluation must still bind to its original byte snapshot.
             self.write(self.after, [dict(self.row, sha256="0" * 64)])
-            return _validate_content(rows, digest, root)
+            return _validate_content(rows, digest, root, **kwargs)
 
         with patch("dataforge.diff._validate_content", side_effect=verify_snapshot):
             report = self.verified()

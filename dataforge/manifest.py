@@ -12,6 +12,8 @@ from typing import Any
 
 MAX_MANIFEST = 8 * 1024 * 1024
 MAX_FILE = 64 * 1024 * 1024
+DEFAULT_TOTAL_BYTES = 256 * 1024 * 1024
+MAX_TOTAL_BYTES = 1024 * 1024 * 1024
 MAX_RECORDS = 10000
 FIELDS = {"version", "id", "path", "split", "media_type", "sha256", "license"}
 MEDIA_TYPES = {"text/plain", "image/png", "image/jpeg"}
@@ -107,21 +109,33 @@ def read_manifest(manifest: str | Path) -> tuple[list[tuple[int, dict[str, Any]]
     return rows, hashlib.sha256(raw).hexdigest()
 
 
+def validate_total_budget(value: int) -> None:
+    if type(value) is not int or not 1 <= value <= MAX_TOTAL_BYTES:
+        raise ValueError("max_total_bytes must be an integer from 1 to 1 GiB")
+
+
 def validate(
     manifest: str | Path,
     root: str | Path,
     *,
     check_images: bool = False,
     max_pixels: int = 16_000_000,
+    max_total_bytes: int = DEFAULT_TOTAL_BYTES,
 ) -> dict[str, Any]:
     """Return findings, never rewrite source files; schema or I/O errors abort.
 
     Files and root must be trusted, immutable local inputs during validation.
     Path checks are not race-resistant isolation against another local process.
     """
+    validate_total_budget(max_total_bytes)
     metadata, manifest_hash = read_manifest(manifest)
     return _validate_content(
-        metadata, manifest_hash, root, check_images=check_images, max_pixels=max_pixels
+        metadata,
+        manifest_hash,
+        root,
+        check_images=check_images,
+        max_pixels=max_pixels,
+        max_total_bytes=max_total_bytes,
     )
 
 
@@ -132,8 +146,10 @@ def _validate_content(
     *,
     check_images: bool = False,
     max_pixels: int = 16_000_000,
+    max_total_bytes: int = DEFAULT_TOTAL_BYTES,
 ) -> dict[str, Any]:
     """Validate content against an already parsed manifest snapshot (internal)."""
+    validate_total_budget(max_total_bytes)
     if type(check_images) is not bool:
         raise ValueError("check_images must be boolean")
     if check_images:
@@ -151,6 +167,7 @@ def _validate_content(
     findings = []
     seen: dict[str, tuple[int, str]] = {}
     split_seen: dict[tuple[str, str], int] = {}
+    aggregate_bytes = 0
     for number, row, path in rows:
         image_bytes = (
             bytearray()
@@ -159,9 +176,18 @@ def _validate_content(
         )
         digest = hashlib.sha256()
         total = 0
-        with path.open("rb") as stream:
-            while block := stream.read(1024 * 1024):
+        with path.open("rb", buffering=0) as stream:
+            while block := stream.read(
+                min(
+                    1024 * 1024,
+                    MAX_FILE - total + 1,
+                    max_total_bytes - aggregate_bytes + 1,
+                )
+            ):
                 total += len(block)
+                aggregate_bytes += len(block)
+                if aggregate_bytes > max_total_bytes:
+                    raise ValueError("dataset content exceeds total byte budget")
                 if total > MAX_FILE:
                     raise ValueError("dataset file exceeds 64 MiB")
                 digest.update(block)
@@ -207,6 +233,10 @@ def _validate_content(
         "records": len(rows),
         "ok": not findings,
         "findings": findings,
+        "content_validation": {
+            "max_total_bytes": max_total_bytes,
+            "bytes_read": aggregate_bytes,
+        },
     }
 
     if check_images:

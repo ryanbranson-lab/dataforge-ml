@@ -8,7 +8,13 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from .manifest import FIELDS, _validate_content, read_manifest
+from .manifest import (
+    DEFAULT_TOTAL_BYTES,
+    FIELDS,
+    _validate_content,
+    read_manifest,
+    validate_total_budget,
+)
 
 
 def compare(
@@ -17,6 +23,7 @@ def compare(
     *,
     before_root: str | Path | None = None,
     after_root: str | Path | None = None,
+    max_total_bytes: int = DEFAULT_TOTAL_BYTES,
 ) -> dict[str, Any]:
     """Join validated records by stable ID and report declared field changes.
 
@@ -25,6 +32,9 @@ def compare(
     Both roots opt into byte verification; neither root preserves metadata-only mode.
     Hash mismatch, missing content and unsafe paths abort without a partial report.
     """
+    validate_total_budget(max_total_bytes)
+    if before_root is None and max_total_bytes != DEFAULT_TOTAL_BYTES:
+        raise ValueError("custom content budget requires both roots")
     if (before_root is None) != (after_root is None):
         raise ValueError("before_root and after_root must be supplied together")
     old_rows, old_hash = read_manifest(before)
@@ -68,8 +78,12 @@ def compare(
         "unchanged": unchanged,
     }
     if before_root is not None and after_root is not None:
-        before_check = _validate_content(old_rows, old_hash, before_root)
-        after_check = _validate_content(new_rows, new_hash, after_root)
+        before_check = _validate_content(
+            old_rows, old_hash, before_root, max_total_bytes=max_total_bytes
+        )
+        after_check = _validate_content(
+            new_rows, new_hash, after_root, max_total_bytes=max_total_bytes
+        )
         for label, check in (("before", before_check), ("after", after_check)):
             if any(finding["code"] == "hash_mismatch" for finding in check["findings"]):
                 raise ValueError(f"{label} content differs from declared SHA-256")
@@ -88,6 +102,7 @@ def main() -> int:
     parser.add_argument("after")
     parser.add_argument("--before-root")
     parser.add_argument("--after-root")
+    parser.add_argument("--max-total-bytes", type=int, default=DEFAULT_TOTAL_BYTES)
     args = parser.parse_args()
     try:
         report = compare(
@@ -95,6 +110,7 @@ def main() -> int:
             args.after,
             before_root=args.before_root,
             after_root=args.after_root,
+            max_total_bytes=args.max_total_bytes,
         )
     except (OSError, ValueError) as exc:
         print(f"comparison failed: {exc}", file=sys.stderr)
