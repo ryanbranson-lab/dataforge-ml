@@ -22,3 +22,7 @@ and bounded atomic no-clobber output. No exact split-size or leakage guarantee.
 
 Unreleased: bounded single-manifest split-declaration audit with stable examples,
 complete declared-group counts, explicit metadata-only status and findings exit1.
+
+Unreleased: aggregate content-byte budgets for validation and verified diff, with
+unbuffered bounded reads, complete byte accounting including hash mismatches,
+explicit per-root limits and no partial success report after budget exhaustion.

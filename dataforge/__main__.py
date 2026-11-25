@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 
-from .manifest import validate
+from .manifest import DEFAULT_TOTAL_BYTES, validate
 
 
 def main() -> int:
@@ -13,6 +13,7 @@ def main() -> int:
     parser.add_argument("--root", required=True)
     parser.add_argument("--check-images", action="store_true")
     parser.add_argument("--max-pixels", type=int, default=16_000_000)
+    parser.add_argument("--max-total-bytes", type=int, default=DEFAULT_TOTAL_BYTES)
     args = parser.parse_args()
     try:
         report = validate(
@@ -20,6 +21,7 @@ def main() -> int:
             args.root,
             check_images=args.check_images,
             max_pixels=args.max_pixels,
+            max_total_bytes=args.max_total_bytes,
         )
     except (OSError, ValueError) as exc:
         print(f"validation failed: {exc}", file=sys.stderr)

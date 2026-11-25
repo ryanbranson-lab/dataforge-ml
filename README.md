@@ -103,3 +103,8 @@ For a single combined manifest, use
 `python -m dataforge.split_audit combined.jsonl --max-examples 20` to identify
 declared digest groups crossing its split fields. Exit1 reports findings; payload
 files are not opened. See [split declaration audit](docs/split-declaration-audit.md).
+
+Content validation now has a256MiB aggregate default budget. Set
+`--max-total-bytes` explicitly when needed (maximum1GiB); verified diffs apply it
+independently per root. See [byte-budget accounting](docs/content-byte-budget.md)
+for actual returned bytes, failure detection and compatibility limits.
